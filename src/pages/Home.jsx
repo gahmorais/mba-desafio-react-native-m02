@@ -14,11 +14,11 @@ import CustomButton from "../components/CustomButton";
 import FavoriteIcon from "../components/FavoriteIcon";
 
 export default function Home({ navigation }) {
-  const [movie, setMovie] = useState("");
+  const [movies, setMovies] = useState([]);
   const [movieList, setMovieList] = useState([]);
   const [inputYear, setInputYear] = useState("1999");
   const [inputName, setInputName] = useState("matrix");
-
+  const [count, setCount] = useState(0);
   useEffect(() => {
     async function loadFavoriteMovies() {
       try {
@@ -39,7 +39,7 @@ export default function Home({ navigation }) {
   async function searchMovie() {
     try {
       const result = await getMovie(inputName, inputYear);
-      setMovie(result);
+      setMovies(result.Search);
       setInputName("");
       setInputYear("");
     } catch (e) {
@@ -51,10 +51,10 @@ export default function Home({ navigation }) {
     try {
       let list = [...movieList];
       const storage = useAsyncStorage("storage");
-      if (movieList.includes(movie)) {
-        list = movieList.filter((item) => item.imdbID !== movie.imdbID);
+      if (movieList.includes(movies)) {
+        list = movieList.filter((item) => item.imdbID !== movies.imdbID);
       } else {
-        list.push(movie);
+        list.push(movies);
       }
       list.map((item) => console.log(item.Title));
       setMovieList(list);
@@ -63,7 +63,7 @@ export default function Home({ navigation }) {
       console.log(e);
     }
   }
-
+  console.log(count);
   return (
     <ScrollView>
       <View>
@@ -87,36 +87,49 @@ export default function Home({ navigation }) {
             Favoritos
           </CustomButton>
         </View>
+        <View style={{ margin: 10 }}>
+          <CustomButton action={() => setCount(count+1)}>
+            Contador
+          </CustomButton>
+        </View>
+        <View>
+          <Text>Quantidade de filmes: {movies.length}</Text>
+        </View>
       </View>
-      {movie ? (
-        <>
-          <TouchableNativeFeedback
-            onPress={() => navigation.navigate("Details", movie)}
-          >
-            <View style={styles.view}>
-              <Image
-                source={{
-                  uri: movie.Poster,
+
+      {movies.length > 0 ? (
+        movies.map((movie, index) => {
+          return (
+            <>
+              <TouchableNativeFeedback key={index}
+                onPress={() => navigation.navigate("Details", movie)}
+              >
+                <View style={styles.view}>
+                  <Image
+                    source={{
+                      uri: movie.Poster,
+                    }}
+                    style={{ width: 345, height: 500 }}
+                  />
+                </View>
+              </TouchableNativeFeedback>
+              <View
+                style={{
+                  display: "flex",
+                  flexDirection: "row",
+                  justifyContent: "space-around",
+                  marginVertical: 10,
                 }}
-                style={{ width: 345, height: 500 }}
-              />
-            </View>
-          </TouchableNativeFeedback>
-          <View
-            style={{
-              display: "flex",
-              flexDirection: "row",
-              justifyContent: "space-around",
-              marginVertical: 10,
-            }}
-          >
-            <Text style={styles.text}>{movie.Title}</Text>
-            <FavoriteIcon
-              isFavorite={movieList.includes(movie)}
-              action={saveToFavorite}
-            />
-          </View>
-        </>
+              >
+                <Text style={styles.text}>{movie.Title}</Text>
+                <FavoriteIcon
+                  isFavorite={movieList.includes(movie)}
+                  action={saveToFavorite}
+                />
+              </View>
+            </>
+          );
+        })
       ) : (
         <Text>Nenhum filme encontrado</Text>
       )}
