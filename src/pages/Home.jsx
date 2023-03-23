@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
   View,
   Text,
-  Button,
   Image,
   TextInput,
   StyleSheet,
@@ -10,17 +9,34 @@ import {
   TouchableNativeFeedback,
 } from "react-native";
 import { getMovie } from "../api/request";
-import Icon from "react-native-vector-icons/FontAwesome";
-import { MaterialIcons } from "@expo/vector-icons";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import CustomButton from "../components/CustomButton";
+import FavoriteIcon from "../components/FavoriteIcon";
 
 export default function Home({ navigation }) {
   const [movie, setMovie] = useState("");
   const [movieList, setMovieList] = useState([]);
-  const [inputYear, setInputYear] = useState("");
-  const [inputName, setInputName] = useState("");
-  
-  async function search() {
+  const [inputYear, setInputYear] = useState("1999");
+  const [inputName, setInputName] = useState("matrix");
+
+  useEffect(() => {
+    async function loadFavoriteMovies() {
+      try {
+        const storage = useAsyncStorage("storage");
+        const result = await storage.getItem();
+        if (result) {
+          const movies = JSON.parse(result);
+          setMovieList(movies);
+        }
+      } catch (e) {
+        setMovieList([]);
+        console.log(e);
+      }
+    }
+    loadFavoriteMovies();
+  }, []);
+
+  async function searchMovie() {
     try {
       const result = await getMovie(inputName, inputYear);
       setMovie(result);
@@ -30,22 +46,22 @@ export default function Home({ navigation }) {
       console.log(`Erro: ${e.message}`);
     }
   }
+
   async function saveToFavorite() {
     try {
-      const list = [...movieList];
+      let list = [...movieList];
       const storage = useAsyncStorage("storage");
-      list.push(...list, movie);
-      setMovieList([...new Set(list)]);
+      if (movieList.includes(movie)) {
+        list = movieList.filter((item) => item.imdbID !== movie.imdbID);
+      } else {
+        list.push(movie);
+      }
+      list.map((item) => console.log(item.Title));
+      setMovieList(list);
       await storage.setItem(JSON.stringify(list));
-      alert("Adicionado aos favoritos");
-      console.log(list);
     } catch (e) {
       console.log(e);
     }
-  }
-
-  function hasMovie(item, list) {
-    return list.contains(item);
   }
 
   return (
@@ -64,14 +80,12 @@ export default function Home({ navigation }) {
           style={styles.input}
         />
         <View style={{ margin: 10 }}>
-          <Button style={styles.button} title="Buscar filme" onPress={search} />
+          <CustomButton action={searchMovie}>Buscar filme</CustomButton>
         </View>
         <View style={{ margin: 10 }}>
-          <Button
-            style={styles.button}
-            title="Favoritos"
-            onPress={() => navigation.navigate("Favorites")}
-          />
+          <CustomButton action={() => navigation.navigate("Favorites")}>
+            Favoritos
+          </CustomButton>
         </View>
       </View>
       {movie ? (
@@ -97,11 +111,9 @@ export default function Home({ navigation }) {
             }}
           >
             <Text style={styles.text}>{movie.Title}</Text>
-            <MaterialIcons
-              name="star-outline"
-              size={30}
-              onPress={saveToFavorite}
-              color="green"
+            <FavoriteIcon
+              isFavorite={movieList.includes(movie)}
+              action={saveToFavorite}
             />
           </View>
         </>
@@ -111,6 +123,7 @@ export default function Home({ navigation }) {
     </ScrollView>
   );
 }
+
 const styles = StyleSheet.create({
   input: {
     fontSize: 18,

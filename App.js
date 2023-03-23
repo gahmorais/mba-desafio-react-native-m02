@@ -2,7 +2,6 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Home from "./src/pages/Home";
 import MovieDetails from "./src/pages/MovieDetails";
-import { useState } from "react";
 import Favorites from "./src/pages/Favorites";
 export default function App() {
   
@@ -13,7 +12,7 @@ export default function App() {
         <Stack.Screen
           name="Home"
           component={Home}
-          options={{ title: "Filmes" }}
+          options={{ title: "Buscar Filmes" }}
         />
         <Stack.Screen
           name="Details"
